@@ -1,6 +1,6 @@
 import { runCmd } from "./run";
 import fixturez from "fixturez";
-import spawn from "spawndamnit";
+import { exec } from "tinyexec";
 import stripAnsi from "strip-ansi";
 
 const f = fixturez(__dirname);
@@ -23,14 +23,16 @@ describe("Run command", () => {
   ])(
     'should execute "%s %s" and exit with %i',
     async (arg0, arg1, exitCode) => {
-      const { stdout, stderr, code } = await spawn(
+      const proc = exec(
         require.resolve("../bin"),
         // @ts-ignore
         ["run", arg0, arg1],
         {
-          cwd: f.find("basic-with-scripts"),
+          nodeOptions: { cwd: f.find("basic-with-scripts") }
         }
       );
+      const { stdout, stderr } = await proc;
+      const code = proc.exitCode;
       expect(code).toBe(exitCode);
       expect(stripAnsi(stdout.toString())).toMatchSnapshot("stdout");
       expect(stripAnsi(stderr.toString())).toMatchSnapshot("stderr");

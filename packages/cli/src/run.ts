@@ -1,6 +1,6 @@
 import { getPackages } from "@manypkg/get-packages";
 import path from "path";
-import spawn from "spawndamnit";
+import { exec } from "tinyexec";
 import * as logger from "./logger";
 import { ExitError } from "./errors";
 
@@ -12,11 +12,14 @@ export async function runCmd(args: string[], cwd: string) {
   });
 
   if (exactMatchingPackage) {
-    const { code } = await spawn("yarn", args.slice(1), {
-      cwd: exactMatchingPackage.dir,
-      stdio: "inherit",
+    const proc = exec("yarn", args.slice(1), {
+      nodeOptions: {
+        cwd: exactMatchingPackage.dir,
+        stdio: "inherit",
+      }
     });
-    throw new ExitError(code);
+    void await proc;
+    throw new ExitError(proc.exitCode!);
   }
 
   const matchingPackages = packages.filter((pkg) => {
@@ -39,10 +42,13 @@ export async function runCmd(args: string[], cwd: string) {
     logger.error("No matching packages found");
     throw new ExitError(1);
   } else {
-    const { code } = await spawn("yarn", args.slice(1), {
-      cwd: matchingPackages[0].dir,
-      stdio: "inherit",
+    const proc = exec("yarn", args.slice(1), {
+      nodeOptions: {
+        cwd: matchingPackages[0].dir,
+        stdio: "inherit",
+      }
     });
-    throw new ExitError(code);
+    void await proc
+    throw new ExitError(proc.exitCode!);
   }
 }
